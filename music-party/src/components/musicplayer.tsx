@@ -14,6 +14,10 @@ import {
   Tooltip,
   useDisclosure,
   useToast,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
 } from "@chakra-ui/react";
 import { ArrowRightIcon } from "@chakra-ui/icons";
 import React, { useEffect, useRef, useState } from "react";
@@ -29,8 +33,30 @@ export const MusicPlayer = (props: {
   const [time, setTime] = useState(0);
   const t = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [volume, setVolume] = useState(0.5);  // 音量值（范围 0 到 1）
+
+  // 格式化时间函数
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);  // 计算分钟数
+    const secs = Math.floor(seconds % 60);    // 计算秒数
+
+    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;  // 使用 padStart 保证格式为 00:00
+  };
 
   useEffect(() => {
+    if (audio.current) {
+      // 音量值从 0 到 100，映射到 0 到 1 的范围
+      audio.current.volume = volume;
+    }
+  }, [volume]);
+
+  useEffect(() => {
+    // 尝试从 localStorage 获取音量值，若没有，则使用默认值
+    const savedVolume = localStorage.getItem("musicPlayerVolume");
+    if (savedVolume) {
+      setVolume(parseFloat(savedVolume));  // 设置从 localStorage 获取的音量
+    }
+    
     if (!audio.current) {
       audio.current = new Audio();
       audio.current.addEventListener("durationchange", () => {
@@ -39,6 +65,7 @@ export const MusicPlayer = (props: {
       audio.current.addEventListener("timeupdate", () => {
         setTime(audio.current!.currentTime);
       });
+      audio.current.volume = volume;  // 设置初始音量
     }
     if (props.src === "") return;
     audio.current.src = props.src;
@@ -54,13 +81,28 @@ export const MusicPlayer = (props: {
     });
   }, [props.src, props.playtime]);
 
+  // 音量变化时更新音量值和 audio 元素的音量
+  const handleVolumeChange = (value: number) => {
+    setVolume(value / 100);  // 将音量值从 0-100 转换到 0-1
+    if (audio.current) {
+      audio.current.volume = value / 100;  // 更新音频的音量
+      // 保存音量到 localStorage
+      localStorage.setItem("musicPlayerVolume", (value / 100).toString());
+    }
+  };
+  
   return (
     <>
       <Flex flexDirection={"row"} alignItems={"center"}>
+
+        {/* 音乐进度条 */}
         <Progress flex={12} height={"32px"} max={length} value={time} />
-        <Text flex={2} textAlign={"center"}>{`${Math.floor(
-          time
-        )} / ${Math.floor(length)}`}</Text>
+
+        {/* 当前播放时间和总时长显示 */}
+        <Text flex={2} textAlign={"center"}>
+          {`${formatTime(time)} / ${formatTime(length)}`}
+        </Text>
+
         <Tooltip hasArrow label="当音乐没有自动播放时，点我试试">
           <IconButton
             flex={1}
@@ -91,6 +133,25 @@ export const MusicPlayer = (props: {
           />
         </Tooltip>
       </Flex>
+
+      {/* 音量控制部分 */}
+      <Flex flexDirection="row" alignItems="center" mt={4}>
+        <Text mr={2}>音量</Text>
+        <Slider
+          flex={1}
+          value={volume * 100}  // Slider 显示值为 0-100，实际值是 0-1
+          onChange={handleVolumeChange}  // 当音量条值变化时更新音量
+          min={0}
+          max={100}
+          step={1}
+        >
+          <SliderTrack>
+            <SliderFilledTrack />
+          </SliderTrack>
+          <SliderThumb />
+        </Slider>
+      </Flex>
+
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay>
           <ModalContent>
