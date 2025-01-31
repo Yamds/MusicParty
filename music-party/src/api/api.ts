@@ -66,4 +66,5 @@ export interface Music {
   id: string;
   name: string;
   artists: string[];
+  imageUrl: string;
 }

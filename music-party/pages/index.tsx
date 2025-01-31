@@ -46,6 +46,7 @@ import { BilibiliBinder } from '../src/components/bilibilibinder';
 
 export default function Home() {
   const [src, setSrc] = useState('');
+  const [ImageUrl, setImageUrl] = useState(''); // 当前播放的音乐文件 URL
   const [playtime, setPlaytime] = useState(0);
   const [nowPlaying, setNowPlaying] = useState<{
     music: Music;
@@ -73,6 +74,7 @@ export default function Home() {
         async (music: Music, enqueuerName: string, playedTime: number) => {
           console.log(music);
           setSrc(music.url);
+          setImageUrl(music.imageUrl);
           setNowPlaying({ music, enqueuer: enqueuerName });
           setPlaytime(playedTime);
         },
@@ -272,27 +274,10 @@ export default function Home() {
           </TabList>
           <TabPanels>
             <TabPanel>
-              <Flex flexDirection={'row'} mb={4} alignItems={'flex-end'}>
-                {nowPlaying ? (
-                  <>
-                    <Heading>
-                      {`正在播放:\n ${nowPlaying?.music.name} - ${nowPlaying?.music.artists}`}
-                    </Heading>
-                    <Text size={'md'} fontStyle={'italic'} ml={2}>
-                      {`由 ${nowPlaying?.enqueuer} 点歌`}
-                    </Text>
-                  </>
-                ) : (
-                  <Heading>暂无歌曲正在播放</Heading>
-                )}
-              </Flex>
-
               <MusicPlayer
                 src={src}
                 playtime={playtime}
-                nextClick={() => {
-                  conn.current?.nextSong();
-                }}
+                nextClick={() => conn.current?.nextSong()}
                 reset={() => {
                   console.log('reset');
                   conn.current!.requestSetNowPlaying();
@@ -300,6 +285,16 @@ export default function Home() {
                     setQueue(q);
                   });
                 }}
+                imageUrl={ImageUrl}
+                nowPlaying={
+                  nowPlaying
+                    ? {
+                        songName: nowPlaying.music.name,
+                        artist: nowPlaying.music.artists,
+                        requester: nowPlaying.enqueuer,
+                      }
+                    : undefined
+                }
               />
 
               <MusicQueue

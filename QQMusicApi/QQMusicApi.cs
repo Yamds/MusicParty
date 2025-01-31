@@ -57,7 +57,8 @@ public class QQMusicApi : IMusicApi
         var name = j["data"]!["track_info"]!["name"]!.GetValue<string>();
         var artists = j["data"]!["track_info"]!["singer"]!.AsArray()
             .Select(x => x!["name"]!.GetValue<string>()).ToArray();
-        return new Music(id, name, artists);
+        // 作者并未使用qq音乐，故专辑图片直接返回空字符串
+        return new Music(id, name, artists, "");
     }
 
     public async Task<IEnumerable<Music>> SearchMusicByNameAsync(string name)
@@ -130,7 +131,7 @@ public class QQMusicApi : IMusicApi
             {
                 var artists = x!["singer"]!.AsArray().Select(y => y!["name"]!.GetValue<string>()).ToArray();
                 return new Music(x["songmid"]!.GetValue<string>() + ',' + x["strMediaMid"]!.GetValue<string>(),
-                    x["songorig"]!.GetValue<string>(), artists);
+                    x["songorig"]!.GetValue<string>(), artists, "");
             });
         return musics.Skip(offset).Take(10);
     }

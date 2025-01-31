@@ -74,6 +74,7 @@ export interface Music {
   url: string;
   name: string;
   artists: string[];
+  imageUrl: string;
 }
 
 export interface MusicOrderAction {

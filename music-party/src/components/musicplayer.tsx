@@ -18,22 +18,36 @@ import {
   SliderTrack,
   SliderFilledTrack,
   SliderThumb,
+  Image,
+  Box,
+  Heading,
+  SliderMark,
 } from "@chakra-ui/react";
 import { ArrowRightIcon } from "@chakra-ui/icons";
 import React, { useEffect, useRef, useState } from "react";
 
-export const MusicPlayer = (props: {
+// 添加 NowPlaying 类型定义
+interface MusicPlayerProps {
   src: string;
   playtime: number;
   nextClick: () => void;
   reset: () => void;
-}) => {
+  imageUrl: string;
+  nowPlaying?: {
+    songName: string;
+    artist: string;
+    requester: string;
+  };
+}
+
+export const MusicPlayer = (props: MusicPlayerProps) => {
   const audio = useRef<HTMLAudioElement>();
   const [length, setLength] = useState(100);
   const [time, setTime] = useState(0);
   const t = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [volume, setVolume] = useState(0.5);  // 音量值（范围 0 到 1）
+  const [isDragging, setIsDragging] = useState(false);
 
   // 格式化时间函数
   const formatTime = (seconds: number) => {
@@ -56,7 +70,7 @@ export const MusicPlayer = (props: {
     if (savedVolume) {
       setVolume(parseFloat(savedVolume));  // 设置从 localStorage 获取的音量
     }
-    
+
     if (!audio.current) {
       audio.current = new Audio();
       audio.current.addEventListener("durationchange", () => {
@@ -92,64 +106,131 @@ export const MusicPlayer = (props: {
   };
   
   return (
-    <>
-      <Flex flexDirection={"row"} alignItems={"center"}>
+    <Box position="relative" mb={6}>
+      {/* 图片和主内容区域 */}
+      <Flex direction="column">
+        {/* 主内容行 */}
+        <Flex direction="row" align="stretch">
+          {/* 封面图片 */}
+          <Box width="180px" mr={4} position="relative">
+            <Image
+              src={props.imageUrl || "https://i0.hdslb.com/bfs/static/jinkela/video/asserts/no_video.png"}
+              alt="歌曲封面"
+              boxSize="160px"  // 缩小内容尺寸
+              objectFit="contain"  // 改为包含式适应
+              position="absolute"
+              top="50%"
+              left="50%"
+              transform="translate(-50%, -50%)"
+              backgroundColor="whiteAlpha.400"  // 添加背景色
+              borderRadius="md"  // 圆角
+              p={2}  // 内边距
+            />
+          </Box>
 
-        {/* 音乐进度条 */}
-        <Progress flex={12} height={"32px"} max={length} value={time} />
+          {/* 右侧内容 */}
+          <Flex direction="column" flex={1} justifyContent="space-between">
+            {/* 标题信息 */}
+            {props.nowPlaying ? (
+              <Box>
+                <Heading fontSize="2xl" lineHeight="short">
+                  {props.nowPlaying.songName}
+                </Heading>
+                <Text fontSize="lg">
+                  -- {props.nowPlaying.artist}
+                </Text>
+                <Text fontSize="sm" color="brand.100" mt={1}>
+                  点歌人: {props.nowPlaying.requester}
+                </Text>
+              </Box>
+            ) : (
+              <Box>
+                <Heading fontSize="2xl" lineHeight="short">
+                  暂无歌曲正在播放
+                </Heading>
+              </Box>
+            )}
 
-        {/* 当前播放时间和总时长显示 */}
-        <Text flex={2} textAlign={"center"}>
-          {`${formatTime(time)} / ${formatTime(length)}`}
-        </Text>
+            {/* 进度条控制区域 - 自动顶部边距 */}
+            <Flex direction="row" align="center" mt="auto">
+              <Progress
+                flex={1}
+                height="32px"
+                max={length}
+                value={time}
+                mr={4}
+              />
+              <Text flex="0 0 100px" textAlign="center">
+                {`${formatTime(time)} / ${formatTime(length)}`}
+              </Text>
+              
+              {/* 控制按钮 */}
+              <Flex gap={2} ml={4}>
+                <Tooltip hasArrow label="当音乐没有自动播放时，点我试试">
+                  <IconButton
+                    aria-label="Play"
+                    icon={
+                      <Icon viewBox="0 0 1024 1024">
+                        <path
+                          d="M128 138.666667c0-47.232 33.322667-66.666667 74.176-43.562667l663.146667 374.954667c40.96 23.168 40.853333 60.8 0 83.882666L202.176 928.896C161.216 952.064 128 932.565333 128 885.333333v-746.666666z"
+                          fill="#3D3D3D"
+                          p-id="2949"
+                        ></path>
+                      </Icon>
+                    }
+                    onClick={() => {
+                      audio.current?.play();
+                      audio.current?.pause();
+                      props.reset();
+                    }}
+                  />
+                </Tooltip>
+                <Tooltip hasArrow label="切歌">
+                  <IconButton
+                    icon={<ArrowRightIcon />}
+                    aria-label="切歌"
+                    onClick={props.nextClick}
+                  />
+                </Tooltip>
+              </Flex>
+            </Flex>
+          </Flex>
+        </Flex>
 
-        <Tooltip hasArrow label="当音乐没有自动播放时，点我试试">
-          <IconButton
+        {/* 独立音量控制行 */}
+        <Flex direction="row" align="center" mt={4} width="100%">
+          <Text width="40px" flexShrink={0}>音量</Text>
+          <Slider
+            value={volume * 100}
+            onChange={handleVolumeChange}
             flex={1}
-            aria-label={"Play"}
-            mr={2}
-            icon={
-              <Icon viewBox="0 0 1024 1024">
-                <path
-                  d="M128 138.666667c0-47.232 33.322667-66.666667 74.176-43.562667l663.146667 374.954667c40.96 23.168 40.853333 60.8 0 83.882666L202.176 928.896C161.216 952.064 128 932.565333 128 885.333333v-746.666666z"
-                  fill="#3D3D3D"
-                  p-id="2949"
-                ></path>
-              </Icon>
-            }
-            onClick={() => {
-              audio.current?.play();
-              audio.current?.pause();
-              props.reset();
-            }}
-          />
-        </Tooltip>
-        <Tooltip hasArrow label={"切歌"}>
-          <IconButton
-            flex={1}
-            icon={<ArrowRightIcon />}
-            aria-label={"切歌"}
-            onClick={props.nextClick}
-          />
-        </Tooltip>
-      </Flex>
-
-      {/* 音量控制部分 */}
-      <Flex flexDirection="row" alignItems="center" mt={4}>
-        <Text mr={2}>音量</Text>
-        <Slider
-          flex={1}
-          value={volume * 100}  // Slider 显示值为 0-100，实际值是 0-1
-          onChange={handleVolumeChange}  // 当音量条值变化时更新音量
-          min={0}
-          max={100}
-          step={1}
-        >
-          <SliderTrack>
-            <SliderFilledTrack />
-          </SliderTrack>
-          <SliderThumb />
-        </Slider>
+            ml={4}
+            onMouseDown={() => setIsDragging(true)}
+            onMouseUp={() => setIsDragging(false)}
+            min={0}
+            max={100}
+            step={1}
+          >
+            <SliderTrack>
+              <SliderFilledTrack />
+            </SliderTrack>
+            {isDragging && (
+              <SliderMark
+                value={volume * 100}
+                textAlign="center"
+                bg="blue.500"
+                color="white"
+                mt="-8"
+                ml="-5"
+                w="10"
+                borderRadius="md"
+              >
+                {Math.round(volume * 100)}
+              </SliderMark>
+            )}
+            <SliderThumb />
+          </Slider>
+        </Flex>
       </Flex>
 
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -179,6 +260,6 @@ export const MusicPlayer = (props: {
           </ModalContent>
         </ModalOverlay>
       </Modal>
-    </>
+    </Box>
   );
 };

@@ -77,7 +77,7 @@ public class BilibiliApi : IMusicApi
         var j = JsonSerializer.Deserialize<BVQueryJson.RootObject>(resp);
         if (j is null || j.code != 0 || j.data is null)
             throw new Exception($"Unable to get playable music, message: {resp}");
-        return new Music($"{j.data.bvid},{j.data.cid}", j.data.title, new[] { j.data.owner.name });
+        return new Music($"{j.data.bvid},{j.data.cid}", j.data.title, new[] { j.data.owner.name }, j.data.pic);
     }
 
     public async Task<IEnumerable<Music>> SearchMusicByNameAsync(string name)
@@ -137,7 +137,7 @@ public class BilibiliApi : IMusicApi
         if (j.data?.medias is null)
             return Array.Empty<Music>();
         return j.data.medias.Where(x => x.title != "已失效视频" && x.type == 2)
-            .Select(x => new Music(x.bvid, x.title, new[] { x.upper.name }));
+            .Select(x => new Music(x.bvid, x.title, new[] { x.upper.name }, "https://i0.hdslb.com/bfs/static/jinkela/video/asserts/no_video.png"));
     }
 
     #region JsonClasses
@@ -213,7 +213,8 @@ public class BilibiliApi : IMusicApi
             string bvid,
             string title,
             Owner owner,
-            long cid
+            long cid,
+            string pic
         );
 
         public record Owner(
