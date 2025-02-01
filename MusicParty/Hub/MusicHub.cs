@@ -139,6 +139,19 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         await Clients.Caller.SendAsync("ReceiveLoopModeStatus", _musicBroadcaster._loopMode);
     }
 
+    public async Task DeleteSong(string actionId)
+    {
+        var musicName = _musicBroadcaster.GetMusicName(actionId);
+        if (!string.IsNullOrEmpty(musicName))
+        {
+            _musicBroadcaster.DeleteSong(actionId);
+            await Clients.All.SendAsync("MusicDeleted", 
+                actionId, 
+                _userManager.FindUserById(Context.User!.Identity!.Name!)!.Name,
+                musicName);
+        }
+    }
+
     #endregion
 
     private async Task SetNowPlaying(IClientProxy target, PlayableMusic music, string enqueuerName, int playedTime)

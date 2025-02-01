@@ -23,6 +23,17 @@ public class MusicBroadcaster
     // 新增循环模式字段
     public bool _loopMode = true;
 
+    private List<MusicQueueItem> _queue = new();  // 假设已有队列定义
+    private readonly object _queueLock = new();    // 队列操作锁
+
+    public class MusicQueueItem
+    {
+        public string ActionId { get; set; }
+        public PlayableMusic Music { get; set; }
+        public string ServiceName { get; set; }
+        public string EnqueuerId { get; set; }
+    }
+
     // 构造函数：初始化音乐API、SignalR Hub等依赖项
     public MusicBroadcaster(IEnumerable<IMusicApi> apis, IHubContext<MusicHub> context, UserManager userManager,
         ILogger<MusicBroadcaster> logger)
@@ -222,5 +233,25 @@ public class MusicBroadcaster
     public void ToggleLoopMode()
     {
         _loopMode = !_loopMode;
+    }
+
+    public void DeleteSong(string actionId)
+    {
+        lock (MusicQueue)
+        {
+            // 从队列中移除指定actionId的歌曲
+            var itemToRemove = MusicQueue.FirstOrDefault(x => x.ActionId == actionId);
+            if (itemToRemove != null)
+            {
+                MusicQueue.Remove(itemToRemove);
+                _logger.LogInformation($"歌曲 {itemToRemove.Music.Name} 已被删除");
+            }
+        }
+    }
+
+    public string GetMusicName(string actionId)
+    {
+        var item = MusicQueue.FirstOrDefault(x => x.ActionId == actionId);
+        return item?.Music.Name ?? string.Empty;
     }
 }

@@ -22,7 +22,8 @@ export class Connection {
     newChat: (name: string, content: string) => void,
     globalMessage: (content: string) => void,
     abort: (msg: string) => void,
-    onLoopModeUpdate: (status: boolean) => void
+    onLoopModeUpdate: (status: boolean) => void,
+    musicDeleted: (actionId: string, operatorName: string, musicName: string) => void
   ) {
     this._conn = new sr.HubConnectionBuilder().withUrl(url).build();
     this._conn.on("SetNowPlaying", setNowPlaying);
@@ -37,6 +38,7 @@ export class Connection {
     this._conn.on("GlobalMessage", globalMessage);
     this._conn.on("Abort", abort);
     this._conn.on("ReceiveLoopModeStatus", onLoopModeUpdate);
+    this._conn.on("MusicDeleted", musicDeleted);
     this._conn.onclose((e) => {
       alert(`您已断开连接，请刷新页面重连\n错误信息：${e}`);
     });
@@ -76,6 +78,9 @@ export class Connection {
   }
   public async requestLoopModeStatus(): Promise<void> {
     return this._conn.invoke("RequestLoopModeStatus");
+  }
+  public async deleteSong(actionId: string) {
+    await this._conn.invoke("DeleteSong", actionId);
   }
 }
 export interface Music {

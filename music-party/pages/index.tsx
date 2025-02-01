@@ -122,6 +122,10 @@ export default function Home() {
         },
         (status: boolean) => {
           setLoopMode(status);
+        },
+        async (actionId: string, operatorName: string, musicName: string) => {
+          toastInfo(t, `${operatorName} 删除了歌曲 "${musicName}"`);
+          setQueue(q => q.filter(x => x.actionId !== actionId));
         }
       );
       conn.current
@@ -320,6 +324,9 @@ export default function Home() {
                 queue={queue}
                 top={(actionId) => {
                   conn.current!.topSong(actionId);
+                }}
+                delete={(actionId) => {
+                  conn.current!.deleteSong(actionId);
                 }}
                 loopMode={loopMode}
                 toggleLoopMode={toggleLoopMode}
