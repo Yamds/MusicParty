@@ -12,17 +12,36 @@ import {
   Flex,
   Tooltip,
   IconButton,
+  HStack,
+  Switch
 } from '@chakra-ui/react';
 import { MusicOrderAction } from '../api/musichub';
 
-export const MusicQueue = (props: {
+interface MusicQueueProps {
   queue: MusicOrderAction[];
   top: (actionId: string) => void;
-}) => {
+  loopMode: boolean;
+  toggleLoopMode: (checked: boolean) => void;
+}
+
+export const MusicQueue = (props: MusicQueueProps) => {
+
+
   return (
     <Card mt={4}>
       <CardHeader>
-        <Heading size={'lg'}>播放队列</Heading>
+        <Flex justifyContent="space-between" alignItems="center" width="full">
+          <Heading size={'lg'}>播放队列</Heading>
+          <HStack spacing={2}>
+            <Text fontSize="sm" color="gray.500">循环模式</Text>
+            <Switch 
+              colorScheme="blue"
+              size="md"
+              isChecked={props.loopMode}
+              onChange={(e) => props.toggleLoopMode(e.target.checked)}
+            />
+          </HStack>
+        </Flex>
       </CardHeader>
       <CardBody>
         <OrderedList>

@@ -52,7 +52,8 @@ export default function Home() {
     music: Music;
     enqueuer: string;
   }>();
-  const [queue, setQueue] = useState<MusicOrderAction[]>([]);
+  const [queue, setQueue] = useState<MusicOrderAction[]>([]); 
+  const [loopMode, setLoopMode] = useState(true);
   const [userName, setUserName] = useState('');
   const [newName, setNewName] = useState('');
   const [onlineUsers, setOnlineUsers] = useState<
@@ -118,6 +119,9 @@ export default function Home() {
         async (msg: string) => {
           console.error(msg);
           toastError(t, msg);
+        },
+        (status: boolean) => {
+          setLoopMode(status);
         }
       );
       conn.current
@@ -128,6 +132,7 @@ export default function Home() {
             setQueue(queue);
             const users = await conn.current!.getOnlineUsers();
             setOnlineUsers(users);
+            await conn.current!.requestLoopModeStatus();
           } catch (err: any) {
             toastError(t, err);
           }
@@ -151,6 +156,16 @@ export default function Home() {
       setInited(true);
     }
   }, []);
+
+  const toggleLoopMode = (isLooping: boolean) => {
+    setLoopMode(isLooping);
+    conn.current!.setLoopMode(isLooping)
+      .catch((error) => {
+        setLoopMode(!isLooping);
+        console.error('切换循环模式失败:', error);
+        toastError(t, `循环模式切换失败: ${error.message}`);
+      });
+  };
 
   return (
     <Grid templateAreas={`"nav main"`} gridTemplateColumns={'2fr 5fr'} gap='1'>
@@ -290,7 +305,7 @@ export default function Home() {
                   nowPlaying
                     ? {
                         songName: nowPlaying.music.name,
-                        artist: nowPlaying.music.artists,
+                        artist: nowPlaying.music.artists.join(', '),
                         requester: nowPlaying.enqueuer,
                       }
                     : undefined
@@ -302,6 +317,8 @@ export default function Home() {
                 top={(actionId) => {
                   conn.current!.topSong(actionId);
                 }}
+                loopMode={loopMode}
+                toggleLoopMode={toggleLoopMode}
               />
             </TabPanel>
             <TabPanel>

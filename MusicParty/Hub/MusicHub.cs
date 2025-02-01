@@ -47,7 +47,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
 
         if (_musicBroadcaster.NowPlaying is not null)
         {
-            var (music, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
+            var (music, service, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
             await SetNowPlaying(Clients.Caller, music, _userManager.FindUserById(enqueuerId)!.Name,
                 (int)(DateTime.Now - _musicBroadcaster.NowPlayingStartedTime).TotalSeconds);
         }
@@ -85,7 +85,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     public async Task RequestSetNowPlaying()
     {
         if (_musicBroadcaster.NowPlaying is null) return;
-        var (music, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
+        var (music, service, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
         await SetNowPlaying(Clients.Caller, music, _userManager.FindUserById(enqueuerId)!.Name,
             (int)(DateTime.Now - _musicBroadcaster.NowPlayingStartedTime).TotalSeconds);
     }
@@ -129,6 +129,16 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         await NewChat(Clients.All, name, content);
     }
 
+    public async Task setLoopMode(bool content)
+    {
+        await _musicBroadcaster.SetLoopMode(content);
+    }
+
+    public async Task RequestLoopModeStatus()
+    {
+        await Clients.Caller.SendAsync("ReceiveLoopModeStatus", _musicBroadcaster._loopMode);
+    }
+
     #endregion
 
     private async Task SetNowPlaying(IClientProxy target, PlayableMusic music, string enqueuerName, int playedTime)
@@ -154,5 +164,10 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     private async Task NewChat(IClientProxy target, string name, string content)
     {
         await target.SendAsync(nameof(NewChat), name, content);
+    }
+
+    private async Task UpdateLoopModeToAll(bool status)
+    {
+        await Clients.All.SendAsync("ReceiveLoopModeStatus", status);
     }
 }

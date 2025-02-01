@@ -4,16 +4,26 @@ using MusicParty.MusicApi;
 
 namespace MusicParty;
 
+// 音乐广播系统核心类，负责管理播放队列和播放状态
 public class MusicBroadcaster
 {
-    public (PlayableMusic music, string enqueuerId)? NowPlaying { get; private set; }
+    // 当前播放信息（音乐对象、点播用户ID）
+    public (PlayableMusic music, string service, string enqueuerId)? NowPlaying { get; private set; }
+    
+    // 使用自定义的可置顶队列存储待播放音乐
     private ToppableQueue<MusicOrderAction> MusicQueue { get; } = new();
+    
+    // 当前歌曲开始播放的时间
     public DateTime NowPlayingStartedTime { get; private set; }
     private readonly IEnumerable<IMusicApi> _apis;
     private readonly IHubContext<MusicHub> _context;
     private readonly UserManager _userManager;
     private readonly ILogger<MusicBroadcaster> _logger;
 
+    // 新增循环模式字段
+    public bool _loopMode = true;
+
+    // 构造函数：初始化音乐API、SignalR Hub等依赖项
     public MusicBroadcaster(IEnumerable<IMusicApi> apis, IHubContext<MusicHub> context, UserManager userManager,
         ILogger<MusicBroadcaster> logger)
     {
@@ -24,12 +34,14 @@ public class MusicBroadcaster
         Task.Run(Loop);
     }
 
+    // 主循环：持续监控播放状态和音乐队列
     private async Task Loop()
     {
         while (true)
         {
             if (NowPlaying is null)
             {
+                // 从队列中取出下一首音乐进行播放
                 if (MusicQueue.TryDequeue(out var musicOrder))
                 {
                     await MusicDequeued();
@@ -46,7 +58,7 @@ public class MusicBroadcaster
                         try
                         {
                             var music = await ma!.GetPlayableMusicAsync(musicOrder.Music);
-                            NowPlaying = (music, musicOrder.EnqueuerId);
+                            NowPlaying = (music, musicOrder.Service, musicOrder.EnqueuerId);
                             if (music.NeedProxy)
                             {
                                 await MusicProxyMiddleware.StartProxyAsync(new MusicProxyRequest(music.TargetUrl!,
@@ -74,74 +86,106 @@ public class MusicBroadcaster
             }
             else
             {
-                if ((DateTime.Now - NowPlayingStartedTime).TotalMilliseconds >=
-                    NowPlaying.Value.music.Length) // play is over
+                // 检查当前歌曲是否播放完毕
+                if ((DateTime.Now - NowPlayingStartedTime).TotalMilliseconds >= NowPlaying.Value.music.Length)
                 {
-                    NowPlaying = null;
+                    // 新增循环播放逻辑
+                    if (_loopMode)  // 需要先声明循环模式字段
+                    {
+                        // 将当前歌曲重新加入队列
+                        var current = NowPlaying.Value;
+                        await EnqueueMusic(current.music, current.service, current.enqueuerId);
+                    }
+                    
+                    NowPlaying = null; // 强制结束当前播放
                 }
             }
 
-            await Task.Delay(1000);
+            await Task.Delay(1000); // 每秒检查一次状态
         }
     }
 
+    // 获取当前播放队列
     public IEnumerable<MusicOrderAction> GetQueue() => MusicQueue;
 
+    // 添加音乐到队列
     public async Task EnqueueMusic(Music music, string apiName, string enqueuerId)
     {
         var action = new MusicOrderAction(Guid.NewGuid().ToString()[..8], music, apiName, enqueuerId);
+
         MusicQueue.Enqueue(action);
+
         await MusicEnqueued(action.ActionId, music, _userManager.FindUserById(enqueuerId)!.Name);
     }
+    public async Task SetLoopMode(bool content)
+    {
+        _loopMode = content;
+        await _context.Clients.All.SendAsync(nameof(SetLoopMode), content);
+        
+        // 新增：当模式改变时通知所有客户端
+        await _context.Clients.All.SendAsync("ReceiveLoopModeStatus", _loopMode);
+    }
 
+    // 切歌处理（支持循环模式）
     public async Task NextSong(string operatorId)
     {
         if (NowPlaying is null) return;
         await MusicCut(operatorId, NowPlaying.Value.music);
-        NowPlaying = null;
+        NowPlaying = null; // 强制结束当前播放
     }
 
+    // 置顶队列中的指定歌曲
     public async Task TopSong(string actionId, string operatorId)
     {
         MusicQueue.TopItem(x => x.ActionId == actionId);
         await MusicTopped(actionId, _userManager.FindUserById(operatorId)!.Name);
     }
 
+    // 私有方法：向客户端推送状态更新 -------------------------
+    
+    // 更新当前播放信息
     private async Task SetNowPlaying(PlayableMusic music, string enqueuerName)
     {
-        await _context.Clients.All.SendAsync(nameof(SetNowPlaying), music, enqueuerName,
-            0); // arg3 is music already played time
+        await _context.Clients.All.SendAsync(nameof(SetNowPlaying), music, enqueuerName, 0);
     }
 
+    // 通知新音乐加入队列
     private async Task MusicEnqueued(string actionId, Music music, string enqueuerName)
     {
         await _context.Clients.All.SendAsync(nameof(MusicEnqueued), actionId, music, enqueuerName);
     }
 
+    // 通知音乐出队（开始播放）
     private async Task MusicDequeued()
     {
         await _context.Clients.All.SendAsync(nameof(MusicDequeued));
     }
 
+    // 通知歌曲被置顶
     private async Task MusicTopped(string actionId, string operatorName)
     {
         await _context.Clients.All.SendAsync(nameof(MusicTopped), actionId, operatorName);
     }
 
+    // 通知切歌操作
     private async Task MusicCut(string operatorId, Music music)
     {
         await _context.Clients.All.SendAsync(nameof(MusicCut), _userManager.FindUserById(operatorId)!.Name, music);
     }
 
+    // 发送全局消息通知
     private async Task GlobalMessage(string content)
     {
         await _context.Clients.All.SendAsync(nameof(GlobalMessage), content);
     }
 
+    // 内部数据记录类型 -------------------------
     public record MusicOrderAction(string ActionId, Music Music, string Service, string EnqueuerId);
 
+    // 自定义可置顶队列实现
     private class ToppableQueue<T> : LinkedList<T>
     {
+        // 将满足条件的项目置顶
         public void TopItem(Func<T, bool> pred)
         {
             if (Count == 1)
@@ -151,11 +195,13 @@ public class MusicBroadcaster
             AddBefore(First!, node);
         }
 
+        // 入队操作（添加到队尾）
         public void Enqueue(T item)
         {
             AddLast(item);
         }
 
+        // 出队操作（从队首移除）
         public bool TryDequeue(out T? item)
         {
             if (Count == 0)
@@ -170,5 +216,11 @@ public class MusicBroadcaster
                 return true;
             }
         }
+    }
+
+    // 新增循环模式方法
+    public void ToggleLoopMode()
+    {
+        _loopMode = !_loopMode;
     }
 }

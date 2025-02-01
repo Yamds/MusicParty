@@ -26,7 +26,6 @@ import {
 import { ArrowRightIcon } from "@chakra-ui/icons";
 import React, { useEffect, useRef, useState } from "react";
 
-// 添加 NowPlaying 类型定义
 interface MusicPlayerProps {
   src: string;
   playtime: number;
