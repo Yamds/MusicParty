@@ -141,6 +141,13 @@ public class MusicBroadcaster
     public async Task NextSong(string operatorId)
     {
         if (NowPlaying is null) return;
+        // 新增循环播放逻辑
+        if (_loopMode)  // 需要先声明循环模式字段
+        {
+            // 将当前歌曲重新加入队列
+            var current = NowPlaying.Value;
+            await EnqueueMusic(current.music, current.service, current.enqueuerId);
+        }
         await MusicCut(operatorId, NowPlaying.Value.music);
         NowPlaying = null; // 强制结束当前播放
     }

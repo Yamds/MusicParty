@@ -157,7 +157,7 @@ export const MusicPlayer = (props: MusicPlayerProps) => {
               </Text>
             </Flex>
 
-            {/* 控制按钮调整为始终在右侧 */}
+            {/* 控制按钮 */}
             <Flex gap={2} mt={[2, 0]} ml={[0, 4]} width={["100%", "auto"]} justifyContent={["center", "flex-start"]}>
               <Tooltip hasArrow label="当音乐没有自动播放时，点我试试">
                 <IconButton
@@ -184,6 +184,7 @@ export const MusicPlayer = (props: MusicPlayerProps) => {
                   icon={<ArrowRightIcon />}
                   aria-label="切歌"
                   size={["sm", "md"]}
+                  onClick={props.nextClick}
                 />
               </Tooltip>
             </Flex>
