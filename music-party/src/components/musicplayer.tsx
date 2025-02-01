@@ -36,6 +36,7 @@ interface MusicPlayerProps {
     songName: string;
     artist: string;
     requester: string;
+    originalUrl: string;
   };
 }
 
@@ -116,6 +117,12 @@ export const MusicPlayer = (props: MusicPlayerProps) => {
             boxSize={["200px", "160px"]}  // 手机端稍大
             objectFit="contain"
             mx="auto"  // 手机端水平居中
+            cursor="pointer"  // 添加手型指针
+            onClick={() => {
+              if (props.nowPlaying?.originalUrl) {
+                window.open(props.nowPlaying.originalUrl, '_blank');
+              }
+            }}
           />
         </Box>
 
@@ -125,7 +132,17 @@ export const MusicPlayer = (props: MusicPlayerProps) => {
           <Box textAlign={["center", "left"]}>
             {props.nowPlaying ? (
               <>
-                <Heading fontSize={["xl", "2xl"]} lineHeight="short">
+                <Heading 
+                  fontSize={["xl", "2xl"]} 
+                  lineHeight="short"
+                  cursor="pointer"
+                  _hover={{ textDecoration: 'underline' }}
+                  onClick={() => {
+                    if (props.nowPlaying?.originalUrl) {
+                      window.open(props.nowPlaying.originalUrl, '_blank');
+                    }
+                  }}
+                >
                   {props.nowPlaying.songName}
                 </Heading>
                 <Text fontSize={["md", "lg"]}>

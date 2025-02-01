@@ -48,10 +48,23 @@ export const MusicQueue = (props: MusicQueueProps) => {
         <OrderedList>
           {props.queue.length > 0 ? (
             props.queue.map((v, index) => (
-              <ListItem key={v.actionId} fontSize={'lg'}>
+              <ListItem 
+                key={v.actionId} 
+                fontSize={'lg'}
+              >
                 <Flex>
                   <Box flex={1}>
-                    {v.music.name} - {v.music.artists}
+                    <Text
+                      cursor="pointer"
+                      _hover={{ textDecoration: 'underline' }}
+                      onClick={() => {
+                        if (v.music.originalUrl) {
+                          window.open(v.music.originalUrl, '_blank');
+                        }
+                      }}
+                    >
+                      {v.music.name} - {v.music.artists}
+                    </Text>
                     <Text fontSize={'sm'} fontStyle={'italic'}>
                       由 {v.enqueuerName} 点歌
                     </Text>

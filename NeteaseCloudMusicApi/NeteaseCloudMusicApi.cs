@@ -180,7 +180,7 @@ public class NeteaseCloudMusicApi : IMusicApi
         var name = (string)j["songs"]![0]!["name"]!;
         var ar = j["songs"]![0]!["ar"]!.AsArray().Select(x => x!["name"]!.GetValue<string>()).ToArray();
                 var picUrl = (string)j["songs"]![0]!["al"]!["picUrl"]!;
-        return new Music(id, name, ar, picUrl);
+        return new Music(id, name, ar, picUrl, "https://music.163.com/song?id="+id);
     }
 
     public Task<IEnumerable<Music>> SearchMusicByNameAsync(string name)
@@ -223,6 +223,6 @@ public class NeteaseCloudMusicApi : IMusicApi
             let id2 = b["id"].GetValue<long>().ToString()
             let name = (string)b["name"]
             let artists = b["ar"].AsArray().Select(y => (string)y["name"]).ToArray()
-            select new Music(id2, name, artists, "");
+            select new Music(id2, name, artists, "", "");
     }
 }

@@ -80,7 +80,7 @@ export default function Home() {
           setPlaytime(playedTime);
         },
         async (actionId: string, music: Music, enqueuerName: string) => {
-          setQueue((q) => q.concat({ actionId, music, enqueuerName }));
+          setQueue((q) => q.concat({ actionId, music, enqueuerName, originalUrl: music.originalUrl }));
         },
         async () => {
           setQueue((q) => q.slice(1));
@@ -315,6 +315,7 @@ export default function Home() {
                         songName: nowPlaying.music.name,
                         artist: nowPlaying.music.artists.join(', '),
                         requester: nowPlaying.enqueuer,
+                        originalUrl: nowPlaying.music.originalUrl,
                       }
                     : undefined
                 }

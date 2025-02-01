@@ -88,10 +88,12 @@ export interface Music {
   name: string;
   artists: string[];
   imageUrl: string;
+  originalUrl: string;
 }
 
 export interface MusicOrderAction {
   actionId: string;
   music: Music;
   enqueuerName: string;
+  originalUrl: string;
 }
