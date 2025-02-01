@@ -168,7 +168,11 @@ export default function Home() {
   };
 
   return (
-    <Grid templateAreas={`"nav main"`} gridTemplateColumns={'2fr 5fr'} gap='1'>
+    <Grid 
+      templateAreas={["'nav' 'main'", "'nav main'"]}
+      gridTemplateColumns={['1fr', '2fr 5fr']}
+      gap='1'
+    >
       <Head>
         <title>🎵 音趴 🎵</title>
         <meta name='description' content='享受音趴！' />
@@ -176,7 +180,7 @@ export default function Home() {
         <meta name='referrer' content='never' />
       </Head>
       <GridItem area={'nav'}>
-        <Stack m={4} spacing={4}>
+        <Stack m={[2, 4]} spacing={[2, 4]}>
           <Card>
             <CardHeader>
               <Heading>{`欢迎, ${userName}!`}</Heading>

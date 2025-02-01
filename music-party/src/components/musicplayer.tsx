@@ -107,129 +107,123 @@ export const MusicPlayer = (props: MusicPlayerProps) => {
   return (
     <Box position="relative" mb={6}>
       {/* 图片和主内容区域 */}
-      <Flex direction="column">
-        {/* 主内容行 */}
-        <Flex direction="row" align="stretch">
-          {/* 封面图片 */}
-          <Box width="180px" mr={4} position="relative">
-            <Image
-              src={props.imageUrl || "https://i0.hdslb.com/bfs/static/jinkela/video/asserts/no_video.png"}
-              alt="歌曲封面"
-              boxSize="160px"  // 缩小内容尺寸
-              objectFit="contain"  // 改为包含式适应
-              position="absolute"
-              top="50%"
-              left="50%"
-              transform="translate(-50%, -50%)"
-              backgroundColor="whiteAlpha.400"  // 添加背景色
-              borderRadius="md"  // 圆角
-              p={2}  // 内边距
-            />
-          </Box>
+      <Flex direction={["column", "row"]} align="stretch">
+        {/* 封面图片 - 手机端占满宽度 */}
+        <Box width={["100%", "180px"]} mr={[0, 4]} mb={[4, 0]}>
+          <Image
+            src={props.imageUrl || "https://i0.hdslb.com/bfs/static/jinkela/video/asserts/no_video.png"}
+            alt="歌曲封面"
+            boxSize={["200px", "160px"]}  // 手机端稍大
+            objectFit="contain"
+            mx="auto"  // 手机端水平居中
+          />
+        </Box>
 
-          {/* 右侧内容 */}
-          <Flex direction="column" flex={1} justifyContent="space-between">
-            {/* 标题信息 */}
+        {/* 右侧内容 - 手机端全宽度 */}
+        <Flex direction="column" flex={1} justifyContent="space-between">
+          {/* 标题信息调整文字对齐方式 */}
+          <Box textAlign={["center", "left"]}>
             {props.nowPlaying ? (
-              <Box>
-                <Heading fontSize="2xl" lineHeight="short">
+              <>
+                <Heading fontSize={["xl", "2xl"]} lineHeight="short">
                   {props.nowPlaying.songName}
                 </Heading>
-                <Text fontSize="lg">
+                <Text fontSize={["md", "lg"]}>
                   -- {props.nowPlaying.artist}
                 </Text>
                 <Text fontSize="sm" color="brand.100" mt={1}>
                   点歌人: {props.nowPlaying.requester}
                 </Text>
-              </Box>
+              </>
             ) : (
-              <Box>
-                <Heading fontSize="2xl" lineHeight="short">
-                  暂无歌曲正在播放
-                </Heading>
-              </Box>
+              <Heading fontSize={["xl", "2xl"]} lineHeight="short">
+                暂无歌曲正在播放
+              </Heading>
             )}
+          </Box>
 
-            {/* 进度条控制区域 - 自动顶部边距 */}
-            <Flex direction="row" align="center" mt="auto">
+          {/* 进度条控制区域 - 调整为垂直堆叠 */}
+          <Flex direction={["column", "row"]} align="center" mt={4}>
+            <Flex direction="row" align="center" flex={1} width="100%">
               <Progress
                 flex={1}
                 height="32px"
                 max={length}
                 value={time}
-                mr={4}
+                mr={[2, 4]}  // 手机端减少右边距
               />
-              <Text flex="0 0 100px" textAlign="center">
+              <Text flex={["0 0 80px", "0 0 100px"]} textAlign="center" fontSize={["sm", "md"]}>
                 {`${formatTime(time)} / ${formatTime(length)}`}
               </Text>
-              
-              {/* 控制按钮 */}
-              <Flex gap={2} ml={4}>
-                <Tooltip hasArrow label="当音乐没有自动播放时，点我试试">
-                  <IconButton
-                    aria-label="Play"
-                    icon={
-                      <Icon viewBox="0 0 1024 1024">
-                        <path
-                          d="M128 138.666667c0-47.232 33.322667-66.666667 74.176-43.562667l663.146667 374.954667c40.96 23.168 40.853333 60.8 0 83.882666L202.176 928.896C161.216 952.064 128 932.565333 128 885.333333v-746.666666z"
-                          fill="#3D3D3D"
-                          p-id="2949"
-                        ></path>
-                      </Icon>
-                    }
-                    onClick={() => {
-                      audio.current?.play();
-                      audio.current?.pause();
-                      props.reset();
-                    }}
-                  />
-                </Tooltip>
-                <Tooltip hasArrow label="切歌">
-                  <IconButton
-                    icon={<ArrowRightIcon />}
-                    aria-label="切歌"
-                    onClick={props.nextClick}
-                  />
-                </Tooltip>
-              </Flex>
+            </Flex>
+
+            {/* 控制按钮调整为始终在右侧 */}
+            <Flex gap={2} mt={[2, 0]} ml={[0, 4]} width={["100%", "auto"]} justifyContent={["center", "flex-start"]}>
+              <Tooltip hasArrow label="当音乐没有自动播放时，点我试试">
+                <IconButton
+                  aria-label="Play"
+                  icon={
+                    <Icon viewBox="0 0 1024 1024">
+                      <path
+                        d="M128 138.666667c0-47.232 33.322667-66.666667 74.176-43.562667l663.146667 374.954667c40.96 23.168 40.853333 60.8 0 83.882666L202.176 928.896C161.216 952.064 128 932.565333 128 885.333333v-746.666666z"
+                        fill="#3D3D3D"
+                        p-id="2949"
+                      ></path>
+                    </Icon>
+                  }
+                  size={["sm", "md"]}
+                  onClick={() => {
+                    audio.current?.play();
+                    audio.current?.pause();
+                    props.reset();
+                  }}
+                />
+              </Tooltip>
+              <Tooltip hasArrow label="切歌">
+                <IconButton
+                  icon={<ArrowRightIcon />}
+                  aria-label="切歌"
+                  size={["sm", "md"]}
+                />
+              </Tooltip>
             </Flex>
           </Flex>
         </Flex>
+      </Flex>
 
-        {/* 独立音量控制行 */}
-        <Flex direction="row" align="center" mt={4} width="100%">
-          <Text width="40px" flexShrink={0}>音量</Text>
-          <Slider
-            value={volume * 100}
-            onChange={handleVolumeChange}
-            flex={1}
-            ml={4}
-            onMouseDown={() => setIsDragging(true)}
-            onMouseUp={() => setIsDragging(false)}
-            min={0}
-            max={100}
-            step={1}
-          >
-            <SliderTrack>
-              <SliderFilledTrack />
-            </SliderTrack>
-            {isDragging && (
-              <SliderMark
-                value={volume * 100}
-                textAlign="center"
-                bg="blue.500"
-                color="white"
-                mt="-8"
-                ml="-5"
-                w="10"
-                borderRadius="md"
-              >
-                {Math.round(volume * 100)}
-              </SliderMark>
-            )}
-            <SliderThumb />
-          </Slider>
-        </Flex>
+      {/* 独立音量控制行 */}
+      <Flex direction="row" align="center" mt={4} width="100%">
+        <Text width={["60px", "40px"]} flexShrink={0}>音量</Text>
+        <Slider
+          value={volume * 100}
+          onChange={handleVolumeChange}
+          flex={1}
+          ml={[2, 4]}
+          onMouseDown={() => setIsDragging(true)}
+          onMouseUp={() => setIsDragging(false)}
+          min={0}
+          max={100}
+          step={1}
+        >
+          <SliderTrack>
+            <SliderFilledTrack />
+          </SliderTrack>
+          {isDragging && (
+            <SliderMark
+              value={volume * 100}
+              textAlign="center"
+              bg="blue.500"
+              color="white"
+              mt="-8"
+              ml="-5"
+              w="10"
+              borderRadius="md"
+            >
+              {Math.round(volume * 100)}
+            </SliderMark>
+          )}
+          <SliderThumb />
+        </Slider>
       </Flex>
 
       <Modal isOpen={isOpen} onClose={onClose}>
